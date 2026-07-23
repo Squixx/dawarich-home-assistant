@@ -72,8 +72,14 @@ Below are the configuration options for the Dawarich Home Assistant integration.
 - **Port:** port number for host
 - **Name:** integration entry category to contain devices
 - **Device Tracker:** device tracker to send data to Dawarich
+- **Minimum distance:** if set to a value greater than 0 (meters), a state change is only sent to Dawarich if the tracker has moved at least that far since the last point that was sent. Defaults to `0` (disabled, i.e. every state change is sent, which is the previous behavior).
 - **Use SSL:** check to use HTTPS (i.e. prepends url with `https`)
 - **Verify SSL:** make sure secure connection is made through SSL
+
+> [!WARNING]
+> **Minimum distance alone can make visit tracking worse, not better.** Home Assistant device trackers already update infrequently while stationary (see [Known Issues](#known-issues) below), and this setting only suppresses updates further. If you enable it, do so together with something that guarantees a point still reaches Dawarich periodically while stationary — for example a `time_pattern` automation that calls a location-push mechanism on a schedule. Keep that schedule shorter than your Dawarich server's **Settings → Visit detection → "Longest gap counted as one stay"** value (`stay_max_gap_minutes`, 60 minutes by default) so a stationary period still gets recognized as a single continuous visit instead of being split into several. Using Minimum distance with no such fallback in place reintroduces the exact gap problem it doesn't solve on its own.
+>
+> This mirrors how dedicated tracking clients (OwnTracks, Traccar, GPSLogger, …) are built: they all report on "moved far enough OR enough time has passed," never distance alone, precisely to avoid silence during stationary periods.
 
 ## Known Issues
 Below are some known issues that are being looked at, but with workarounds for the moment.

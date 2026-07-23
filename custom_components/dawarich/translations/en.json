@@ -9,6 +9,7 @@
           "port": "Port",
           "name": "Name",
           "mobile_app": "Device Tracker",
+          "min_distance": "Minimum distance (meters, 0 to disable)",
           "ssl": "Use SSL (i.e. https)",
           "verify_ssl": "Verify SSL"
         }
@@ -35,6 +36,7 @@
           "port": "Port",
           "name": "Name",
           "mobile_app": "Device Tracker",
+          "min_distance": "Minimum distance (meters, 0 to disable)",
           "ssl": "Use SSL (i.e. https)",
           "verify_ssl": "Verify SSL",
           "api_key": "API Key (leave empty to keep current)"
