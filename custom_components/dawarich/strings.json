@@ -9,6 +9,7 @@
           "port": "[%key:common::config_flow::data::port%]",
           "name": "Name",
           "mobile_app": "Device Tracker",
+          "heartbeat_interval": "Heartbeat interval (minutes, 0 to disable)",
           "ssl": "Use SSL (i.e. https)",
           "verify_ssl": "Verify SSL"
         }
@@ -35,6 +36,7 @@
           "port": "[%key:common::config_flow::data::port%]",
           "name": "Name",
           "mobile_app": "Device Tracker",
+          "heartbeat_interval": "Heartbeat interval (minutes, 0 to disable)",
           "ssl": "Use SSL (i.e. https)",
           "verify_ssl": "Verify SSL",
           "api_key": "API Key (leave empty to keep current)"
@@ -60,6 +62,12 @@
     "api_unavailable": {
       "title": "Dawarich API unavailable",
       "description": "The Dawarich API at `{url}` is not reachable. The server returned status code {status_code} with error: {error}. Please make sure that your Dawarich server is running and is accessible."
+    }
+  },
+  "services": {
+    "push_location": {
+      "name": "Push location",
+      "description": "Sends the tracker's current location to Dawarich immediately, regardless of whether the tracked entity's state has changed."
     }
   }
 }

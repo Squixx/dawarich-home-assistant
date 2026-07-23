@@ -11,6 +11,8 @@ DEFAULT_NAME = "Dawarich"
 DEFAULT_SSL = False
 DEFAULT_VERIFY_SSL = True
 CONF_DEVICE = "mobile_app"
+CONF_HEARTBEAT_INTERVAL = "heartbeat_interval"
+DEFAULT_HEARTBEAT_INTERVAL = 0
 UPDATE_INTERVAL = timedelta(seconds=60)
 VERSION_UPDATE_INTERVAL = timedelta(hours=1)
 

@@ -72,8 +72,12 @@ Below are the configuration options for the Dawarich Home Assistant integration.
 - **Port:** port number for host
 - **Name:** integration entry category to contain devices
 - **Device Tracker:** device tracker to send data to Dawarich
+- **Heartbeat interval:** if set to a value greater than 0 (minutes), the tracker's last known location is resent to Dawarich on this interval even if it hasn't changed. This keeps a continuous stream of points during stationary periods, which prevents Dawarich's visit-detection from splitting a single stay into several spurious visits due to tracker silence. Defaults to `0` (disabled).
 - **Use SSL:** check to use HTTPS (i.e. prepends url with `https`)
 - **Verify SSL:** make sure secure connection is made through SSL
+
+### Service: `dawarich.push_location`
+Call this service, targeting your Dawarich tracker sensor entity, to push the current location to Dawarich on demand, for example from your own automation on a custom schedule.
 
 ## Known Issues
 Below are some known issues that are being looked at, but with workarounds for the moment.

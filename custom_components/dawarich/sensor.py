@@ -1,6 +1,7 @@
 """Show statistical data from your Dawarich instance."""
 
 import logging
+from datetime import datetime, timedelta
 
 from dawarich_api import DawarichAPI
 from homeassistant.components.device_tracker.const import SourceType
@@ -11,12 +12,16 @@ from homeassistant.const import (
     CONF_NAME,
     UnitOfLength,
 )
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant, State, callback
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_platform
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.helpers.event import (
+    async_track_state_change_event,
+    async_track_time_interval,
+)
 from homeassistant.helpers.issue_registry import (
     IssueSeverity,
     async_create_issue,
@@ -29,7 +34,13 @@ from homeassistant.helpers.update_coordinator import (
 
 from custom_components.dawarich import DawarichConfigEntry
 
-from .const import CONF_DEVICE, DOMAIN, DawarichTrackerStates
+from .const import (
+    CONF_DEVICE,
+    CONF_HEARTBEAT_INTERVAL,
+    DEFAULT_HEARTBEAT_INTERVAL,
+    DOMAIN,
+    DawarichTrackerStates,
+)
 from .coordinator import DawarichStatsCoordinator, DawarichVersionCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -128,6 +139,9 @@ async def async_setup_entry(
     if mobile_app is not None:
         _LOGGER.info("Adding tracker sensor for %s", mobile_app)
         api = entry.runtime_data.api
+        heartbeat_interval = entry.data.get(
+            CONF_HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL
+        )
         sensors.append(
             DawarichTrackerSensor(
                 entry_id=entry_id,
@@ -137,7 +151,15 @@ async def async_setup_entry(
                 hass=hass,
                 device_info=device_info,
                 description=TRACKER_SENSOR_TYPES,
+                heartbeat_interval=heartbeat_interval,
             )
+        )
+
+        platform = entity_platform.async_get_current_platform()
+        platform.async_register_entity_service(
+            "push_location",
+            {},
+            "async_push_location",
         )
     else:
         _LOGGER.info("No mobile device provided, skipping tracker sensor")
@@ -157,6 +179,7 @@ class DawarichTrackerSensor(SensorEntity):
         hass: HomeAssistant,
         device_info: DeviceInfo,
         description: SensorEntityDescription,
+        heartbeat_interval: int = 0,
     ) -> None:
         """Initialize the sensor."""
         self._device_name = device_name
@@ -174,6 +197,20 @@ class DawarichTrackerSensor(SensorEntity):
             entity_ids=[self._mobile_app],
             action=self._async_update_callback,
         )
+
+        self._async_unsubscribe_heartbeat = None
+        if heartbeat_interval > 0:
+            _LOGGER.info(
+                "Enabling heartbeat for %s every %s minute(s)",
+                self._mobile_app,
+                heartbeat_interval,
+            )
+            self._async_unsubscribe_heartbeat = async_track_time_interval(
+                self._hass,
+                self._async_heartbeat_callback,
+                timedelta(minutes=heartbeat_interval),
+            )
+
         self._state: DawarichTrackerStates = DawarichTrackerStates.UNKNOWN
         self._attr_options = [state.value for state in DawarichTrackerStates]
 
@@ -226,6 +263,8 @@ class DawarichTrackerSensor(SensorEntity):
     async def async_will_remove_from_hass(self) -> None:
         """Clean up when entity is removed."""
         self._async_unsubscribe_state_changed()
+        if self._async_unsubscribe_heartbeat is not None:
+            self._async_unsubscribe_heartbeat()
         if self._repair_issue_created:
             async_delete_issue(self._hass, DOMAIN, self._issue_id)
 
@@ -261,8 +300,55 @@ class DawarichTrackerSensor(SensorEntity):
             _LOGGER.error("No new state found for %s", self._mobile_app)
             return
 
+        await self._async_send_location(new_state)
+
+    async def _async_heartbeat_callback(self, now: datetime) -> None:
+        """Resend the tracker's last known location on a fixed interval.
+
+        Runs independent of state changes so that Dawarich keeps receiving
+        points while the device is stationary, preventing its visit-detection
+        from treating tracker silence as separate visits.
+        """
+        if await self._async_check_is_disabled():
+            return
+
+        _LOGGER.debug("Heartbeat triggered for %s, updating Dawarich", self._mobile_app)
+        state = self._hass.states.get(self._mobile_app)
+
+        if not self._async_check_entity_availability(state):
+            return
+
+        if state is None:
+            return
+
+        await self._async_send_location(state, use_current_time=True)
+
+    async def async_push_location(self) -> None:
+        """Push the tracker's current location to Dawarich on demand.
+
+        Entry point for the `dawarich.push_location` service, so it can be
+        called from a user's own automations.
+        """
+        if await self._async_check_is_disabled():
+            return
+
+        state = self._hass.states.get(self._mobile_app)
+
+        if not self._async_check_entity_availability(state):
+            return
+
+        if state is None:
+            _LOGGER.error("No state found for %s", self._mobile_app)
+            return
+
+        await self._async_send_location(state, use_current_time=True)
+
+    async def _async_send_location(
+        self, state: State, *, use_current_time: bool = False
+    ) -> None:
+        """Send the given state's coordinates to the Dawarich API."""
         # Log received data
-        new_data = new_state.attributes
+        new_data = state.attributes
         _LOGGER.debug("Received data: %s", new_data)
 
         # Get coordinates from new_data
@@ -284,7 +370,9 @@ class DawarichTrackerSensor(SensorEntity):
             _LOGGER.debug("Coordinates are not present, skipping update")
             return
 
-        optional_params = await self._async_add_optional_params(new_data)
+        optional_params = await self._async_add_optional_params(
+            new_data, use_current_time=use_current_time
+        )
 
         # Send to Dawarich API
         response = await self._api.add_one_point(
@@ -304,7 +392,9 @@ class DawarichTrackerSensor(SensorEntity):
                 response.error,
             )
 
-    async def _async_add_optional_params(self, new_data: dict) -> dict:
+    async def _async_add_optional_params(
+        self, new_data: dict, *, use_current_time: bool = False
+    ) -> dict:
         # Only include optional parameters if they have valid values
         optional_params = {}
 
@@ -325,9 +415,15 @@ class DawarichTrackerSensor(SensorEntity):
         if (battery := new_data.get("battery")) is not None:
             optional_params["battery"] = battery
 
-        if (raw_timestamp := new_data.get("last_seen")) is not None or (
-            raw_timestamp := new_data.get("last_timestamp")
-        ) is not None:
+        # For heartbeat/service pushes we deliberately skip the entity's own
+        # last_seen/last_timestamp attribute: it reflects the last state
+        # change, not "now", and would send Dawarich a burst of points that
+        # all share the same stale timestamp instead of a steady stream over
+        # time. Omitting it lets the API default to the current time.
+        if not use_current_time and (
+            (raw_timestamp := new_data.get("last_seen")) is not None
+            or (raw_timestamp := new_data.get("last_timestamp")) is not None
+        ):
             optional_params["timestamp"] = raw_timestamp
 
         return optional_params

@@ -18,6 +18,8 @@ from homeassistant.helpers import selector
 
 from .const import (
     CONF_DEVICE,
+    CONF_HEARTBEAT_INTERVAL,
+    DEFAULT_HEARTBEAT_INTERVAL,
     DEFAULT_NAME,
     DEFAULT_PORT,
     DEFAULT_SSL,
@@ -52,6 +54,9 @@ class DawarichConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_SSL: user_input[CONF_SSL],
                 CONF_VERIFY_SSL: user_input[CONF_VERIFY_SSL],
                 CONF_DEVICE: user_input.get(CONF_DEVICE),
+                CONF_HEARTBEAT_INTERVAL: user_input.get(
+                    CONF_HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL
+                ),
             }
 
             self._async_abort_entries_match(
@@ -88,6 +93,12 @@ class DawarichConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             domain=["device_tracker", "person"]
                         )
                     ),
+                    vol.Optional(
+                        CONF_HEARTBEAT_INTERVAL,
+                        default=user_input.get(
+                            CONF_HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL
+                        ),
+                    ): vol.All(vol.Coerce(int), vol.Range(min=0)),
                     vol.Required(
                         CONF_SSL, default=user_input.get(CONF_SSL, DEFAULT_SSL)
                     ): bool,
@@ -215,6 +226,9 @@ class DawarichConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_SSL: user_input[CONF_SSL],
                 CONF_VERIFY_SSL: user_input[CONF_VERIFY_SSL],
                 CONF_DEVICE: user_input.get(CONF_DEVICE),
+                CONF_HEARTBEAT_INTERVAL: user_input.get(
+                    CONF_HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL
+                ),
                 CONF_API_KEY: new_api_key,
             }
 
@@ -233,6 +247,9 @@ class DawarichConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_NAME: current_data.get(CONF_NAME, DEFAULT_NAME),
                 CONF_SSL: current_data.get(CONF_SSL, DEFAULT_SSL),
                 CONF_VERIFY_SSL: current_data.get(CONF_VERIFY_SSL, DEFAULT_VERIFY_SSL),
+                CONF_HEARTBEAT_INTERVAL: current_data.get(
+                    CONF_HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL
+                ),
             }
 
         return self.async_show_form(
@@ -257,6 +274,12 @@ class DawarichConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     ): selector.EntitySelector(
                         selector.EntitySelectorConfig(domain="device_tracker")
                     ),
+                    vol.Optional(
+                        CONF_HEARTBEAT_INTERVAL,
+                        default=user_input.get(
+                            CONF_HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL
+                        ),
+                    ): vol.All(vol.Coerce(int), vol.Range(min=0)),
                     vol.Required(
                         CONF_SSL,
                         default=user_input.get(CONF_SSL),
