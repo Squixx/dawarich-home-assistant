@@ -10,7 +10,13 @@
           "name": "Nom",
           "mobile_app": "Rastrejador de Dispositiu",
           "ssl": "Fes servir SSL (ex. https)",
-          "verify_ssl": "Verifica SSL"
+          "verify_ssl": "Verifica SSL",
+          "min_distance": "Distància mínima entre punts (metres)",
+          "heartbeat_interval": "Interval d'enviament periòdic (minuts)"
+        },
+        "data_description": {
+          "min_distance": "Només envia un punt quan el dispositiu s'hagi mogut com a mínim aquesta distància des de l'anterior. 0 envia totes les actualitzacions.",
+          "heartbeat_interval": "Envia també la posició actual cada tants minuts, perquè un dispositiu aturat no deixi mai d'enviar dades. 0 ho desactiva."
         }
       },
       "api_key": {
