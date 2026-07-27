@@ -21,7 +21,7 @@ from homeassistant.core import HomeAssistant
 
 from .const import CONF_DEVICE, DOMAIN
 from .coordinator import DawarichStatsCoordinator, DawarichVersionCoordinator
-from .helpers import get_api
+from .helpers import DawarichServerLimits, async_get_server_limits, get_api
 
 VERSION = json.loads((Path(__file__).parent / "manifest.json").read_text())["version"]
 
@@ -39,6 +39,7 @@ class DawarichConfigEntryData:
     api: DawarichAPI
     coordinator: DawarichStatsCoordinator
     version_coordinator: DawarichVersionCoordinator
+    server_limits: DawarichServerLimits
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: DawarichConfigEntry) -> bool:
@@ -65,7 +66,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: DawarichConfigEntry) -> 
     await version_coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = DawarichConfigEntryData(
-        api=api, coordinator=coordinator, version_coordinator=version_coordinator
+        api=api,
+        coordinator=coordinator,
+        version_coordinator=version_coordinator,
+        server_limits=await async_get_server_limits(hass, api),
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

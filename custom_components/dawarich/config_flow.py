@@ -39,33 +39,48 @@ from .helpers import get_api
 _LOGGER = logging.getLogger(__name__)
 
 
+# Upper bounds exist to stop a typo turning into sustained request volume: a
+# 1-minute heartbeat is 1440 points a day per tracker. They are generous enough
+# that no realistic configuration hits them.
+MAX_DISTANCE_METERS = 10000
+MAX_ACCURACY_METERS = 10000
+MAX_INTERVAL_MINUTES = 1440
+MIN_HEARTBEAT_MINUTES = 5
+
+
 def _tracking_options_schema(values: Mapping[str, Any]) -> dict:
     """Build the schema fragment for the optional tracker tuning options."""
     return {
         vol.Optional(
             CONF_MIN_DISTANCE,
             default=values.get(CONF_MIN_DISTANCE, DEFAULT_MIN_DISTANCE),
-        ): vol.All(vol.Coerce(int), vol.Range(min=0)),
+        ): vol.All(vol.Coerce(int), vol.Range(min=0, max=MAX_DISTANCE_METERS)),
         vol.Optional(
             CONF_GPS_ACCURACY_THRESHOLD,
             default=values.get(
                 CONF_GPS_ACCURACY_THRESHOLD, DEFAULT_GPS_ACCURACY_THRESHOLD
             ),
-        ): vol.All(vol.Coerce(int), vol.Range(min=0)),
+        ): vol.All(vol.Coerce(int), vol.Range(min=0, max=MAX_ACCURACY_METERS)),
         vol.Optional(
             CONF_HEARTBEAT_INTERVAL,
             default=values.get(CONF_HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL),
-        ): vol.All(vol.Coerce(int), vol.Range(min=0)),
+        ): vol.All(
+            vol.Coerce(int),
+            vol.Any(0, vol.Range(min=MIN_HEARTBEAT_MINUTES, max=MAX_INTERVAL_MINUTES)),
+        ),
         vol.Optional(
             CONF_HEARTBEAT_IDLE_AFTER,
             default=values.get(CONF_HEARTBEAT_IDLE_AFTER, DEFAULT_HEARTBEAT_IDLE_AFTER),
-        ): vol.All(vol.Coerce(int), vol.Range(min=0)),
+        ): vol.All(vol.Coerce(int), vol.Range(min=0, max=MAX_INTERVAL_MINUTES)),
         vol.Optional(
             CONF_HEARTBEAT_IDLE_INTERVAL,
             default=values.get(
                 CONF_HEARTBEAT_IDLE_INTERVAL, DEFAULT_HEARTBEAT_IDLE_INTERVAL
             ),
-        ): vol.All(vol.Coerce(int), vol.Range(min=0)),
+        ): vol.All(
+            vol.Coerce(int),
+            vol.Any(0, vol.Range(min=MIN_HEARTBEAT_MINUTES, max=MAX_INTERVAL_MINUTES)),
+        ),
     }
 
 

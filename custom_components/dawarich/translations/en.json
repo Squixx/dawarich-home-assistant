@@ -10,10 +10,10 @@
           "name": "Name",
           "mobile_app": "Device Tracker",
           "min_distance": "Minimum distance (meters, 0 to disable)",
-          "gps_accuracy_threshold": "GPS accuracy threshold (meters, 0 to disable)",
+          "gps_accuracy_threshold": "GPS accuracy threshold (meters, 0 to disable — Dawarich filters server-side)",
           "heartbeat_interval": "Heartbeat interval (minutes, 0 to disable)",
-          "heartbeat_idle_after": "Drop to idle heartbeat after (minutes)",
-          "heartbeat_idle_interval": "Idle heartbeat interval (minutes)",
+          "heartbeat_idle_after": "Drop to idle heartbeat after (minutes, 0 to disable)",
+          "heartbeat_idle_interval": "Idle heartbeat interval (minutes, 0 to disable — needs server tuning, see README)",
           "ssl": "Use SSL (i.e. https)",
           "verify_ssl": "Verify SSL"
         }
@@ -41,10 +41,10 @@
           "name": "Name",
           "mobile_app": "Device Tracker",
           "min_distance": "Minimum distance (meters, 0 to disable)",
-          "gps_accuracy_threshold": "GPS accuracy threshold (meters, 0 to disable)",
+          "gps_accuracy_threshold": "GPS accuracy threshold (meters, 0 to disable — Dawarich filters server-side)",
           "heartbeat_interval": "Heartbeat interval (minutes, 0 to disable)",
-          "heartbeat_idle_after": "Drop to idle heartbeat after (minutes)",
-          "heartbeat_idle_interval": "Idle heartbeat interval (minutes)",
+          "heartbeat_idle_after": "Drop to idle heartbeat after (minutes, 0 to disable)",
+          "heartbeat_idle_interval": "Idle heartbeat interval (minutes, 0 to disable — needs server tuning, see README)",
           "ssl": "Use SSL (i.e. https)",
           "verify_ssl": "Verify SSL",
           "api_key": "API Key (leave empty to keep current)"

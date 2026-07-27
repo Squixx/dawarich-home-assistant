@@ -43,7 +43,6 @@ from .const import (
     CONF_HEARTBEAT_IDLE_INTERVAL,
     CONF_HEARTBEAT_INTERVAL,
     CONF_MIN_DISTANCE,
-    DAWARICH_TRACK_MERGE_FLOOR_MINUTES,
     DEFAULT_GPS_ACCURACY_THRESHOLD,
     DEFAULT_HEARTBEAT_IDLE_AFTER,
     DEFAULT_HEARTBEAT_IDLE_INTERVAL,
@@ -52,6 +51,7 @@ from .const import (
     DEFAULT_MOVEMENT_METERS,
     DOMAIN,
     DawarichTrackerStates,
+    describe_idle_interval,
 )
 from .coordinator import DawarichStatsCoordinator, DawarichVersionCoordinator
 
@@ -154,15 +154,19 @@ async def async_setup_entry(
         idle_interval = entry.data.get(
             CONF_HEARTBEAT_IDLE_INTERVAL, DEFAULT_HEARTBEAT_IDLE_INTERVAL
         )
-        if 0 < idle_interval <= DAWARICH_TRACK_MERGE_FLOOR_MINUTES:
-            _LOGGER.warning(
-                (
-                    "The idle heartbeat interval (%s minutes) is not above Dawarich's "
-                    "%s minute track merge floor, so stationary periods will still be "
-                    "merged into the surrounding track. Consider raising it."
-                ),
+        # Whether an idle cadence splits tracks depends on the server's own
+        # settings, so the check has to run against what this server reports
+        # rather than against Dawarich's defaults.
+        limits = entry.runtime_data.server_limits
+        if (
+            problem := describe_idle_interval(
                 idle_interval,
-                DAWARICH_TRACK_MERGE_FLOOR_MINUTES,
+                limits.minutes_between_routes,
+                limits.stay_max_gap_minutes,
+            )
+        ) is not None:
+            _LOGGER.warning(
+                "Idle heartbeat interval will not work as expected: %s", problem
             )
 
         sensors.append(
@@ -241,20 +245,12 @@ class DawarichTrackerSensor(SensorEntity):
         self._last_movement: datetime | None = None
         self._is_idle = False
 
-        self._async_unsubscribe_state_changed = async_track_state_change_event(
-            hass=self._hass,
-            entity_ids=[self._mobile_app],
-            action=self._async_update_callback,
-        )
-
+        # Subscriptions are set up in async_added_to_hass, not here: an entity
+        # that is disabled in the registry is constructed but never added, so
+        # anything registered from __init__ would keep firing for an entity
+        # that doesn't exist.
+        self._async_unsubscribe_state_changed = None
         self._async_unsubscribe_heartbeat = None
-        if self._heartbeat_interval > 0:
-            _LOGGER.info(
-                "Enabling heartbeat for %s every %s minute(s)",
-                self._mobile_app,
-                self._heartbeat_interval,
-            )
-            self._async_schedule_heartbeat(self._heartbeat_interval)
 
         self._state: DawarichTrackerStates = DawarichTrackerStates.UNKNOWN
         self._attr_options = [state.value for state in DawarichTrackerStates]
@@ -277,6 +273,20 @@ class DawarichTrackerSensor(SensorEntity):
 
     async def async_added_to_hass(self) -> None:
         """Run when entity is added to hass."""
+        self._async_unsubscribe_state_changed = async_track_state_change_event(
+            hass=self._hass,
+            entity_ids=[self._mobile_app],
+            action=self._async_update_callback,
+        )
+
+        if self._heartbeat_interval > 0:
+            _LOGGER.info(
+                "Enabling heartbeat for %s every %s minute(s)",
+                self._mobile_app,
+                self._heartbeat_interval,
+            )
+            self._async_schedule_heartbeat(self._heartbeat_interval)
+
         # Check initial state of the tracked entity
         initial_state = self._hass.states.get(self._mobile_app)
         self._async_check_entity_availability(initial_state)
@@ -323,9 +333,12 @@ class DawarichTrackerSensor(SensorEntity):
 
     async def async_will_remove_from_hass(self) -> None:
         """Clean up when entity is removed."""
-        self._async_unsubscribe_state_changed()
+        if self._async_unsubscribe_state_changed is not None:
+            self._async_unsubscribe_state_changed()
+            self._async_unsubscribe_state_changed = None
         if self._async_unsubscribe_heartbeat is not None:
             self._async_unsubscribe_heartbeat()
+            self._async_unsubscribe_heartbeat = None
         if self._repair_issue_created:
             async_delete_issue(self._hass, DOMAIN, self._issue_id)
 
@@ -536,9 +549,12 @@ class DawarichTrackerSensor(SensorEntity):
         if not self._async_check_entity_availability(state) or state is None:
             return
 
-        if self._async_is_low_accuracy(state.attributes):
-            return
-
+        # Deliberately not accuracy-gated. The heartbeat exists so Dawarich
+        # never reads tracker silence as a departure; skipping it because the
+        # fix is coarse would cause exactly the gap it is meant to prevent, and
+        # a device parked indoors can report a poor fix indefinitely. A coarse
+        # point still carries horizontal_accuracy, so the server can apply its
+        # own filter with full information.
         _LOGGER.debug("Heartbeat triggered for %s, updating Dawarich", self._mobile_app)
         await self._async_send_location(state, use_current_time=True)
 
@@ -669,7 +685,15 @@ class DawarichTrackerSensor(SensorEntity):
         # Look up entity
         if self.registry_entry is None:
             _LOGGER.debug("No registry entry found, looking up based on unique id")
-            entity_entry = entity_registry.async_get(self.unique_id)
+            # async_get() takes an entity_id, so the unique_id has to be
+            # resolved to one first -- passing it directly always missed and
+            # left the sensor looking not-disabled.
+            entity_id = entity_registry.async_get_entity_id(
+                "sensor", DOMAIN, self.unique_id
+            )
+            entity_entry = (
+                entity_registry.async_get(entity_id) if entity_id is not None else None
+            )
         else:
             _LOGGER.debug(
                 "Registry entry found (%s), looking up entity based on registry entry",
