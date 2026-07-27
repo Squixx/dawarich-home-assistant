@@ -40,10 +40,20 @@ _LOGGER = logging.getLogger(__name__)
 MIN_DISTANCE_SELECTOR = vol.All(
     vol.Coerce(int), vol.Range(min=0, max=MAX_DISTANCE_METERS)
 )
+# The lower bound has to stay a plain range: voluptuous_serialize, which turns
+# the schema into JSON for the frontend, cannot convert vol.Any. The "0 or at
+# least MIN_HEARTBEAT_MINUTES" rule is enforced in _validate_heartbeat instead.
 HEARTBEAT_SELECTOR = vol.All(
-    vol.Coerce(int),
-    vol.Any(0, vol.Range(min=MIN_HEARTBEAT_MINUTES, max=MAX_HEARTBEAT_MINUTES)),
+    vol.Coerce(int), vol.Range(min=0, max=MAX_HEARTBEAT_MINUTES)
 )
+
+
+def _validate_heartbeat(user_input: dict[str, Any]) -> dict[str, str]:
+    """Reject a heartbeat that is enabled but shorter than the allowed minimum."""
+    heartbeat = user_input.get(CONF_HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL)
+    if 0 < heartbeat < MIN_HEARTBEAT_MINUTES:
+        return {CONF_HEARTBEAT_INTERVAL: "heartbeat_too_short"}
+    return {}
 
 
 class DawarichConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -62,7 +72,7 @@ class DawarichConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle a flow initiated by the user."""
         errors = {}
 
-        if user_input is not None:
+        if user_input is not None and not (errors := _validate_heartbeat(user_input)):
             self._config = {
                 CONF_HOST: f"{user_input[CONF_HOST]}:{user_input[CONF_PORT]}",
                 CONF_NAME: user_input[CONF_NAME],
@@ -232,30 +242,31 @@ class DawarichConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             current_port = DEFAULT_PORT
 
         if user_input is not None:
-            # Use new API key if provided, otherwise keep existing one
-            new_api_key = user_input.get(CONF_API_KEY)
-            if not new_api_key:
-                new_api_key = current_data.get(CONF_API_KEY)
+            if not (errors := _validate_heartbeat(user_input)):
+                # Use new API key if provided, otherwise keep existing one
+                new_api_key = user_input.get(CONF_API_KEY)
+                if not new_api_key:
+                    new_api_key = current_data.get(CONF_API_KEY)
 
-            # Build new config from user input
-            self._config = {
-                CONF_HOST: f"{user_input[CONF_HOST]}:{user_input[CONF_PORT]}",
-                CONF_NAME: user_input[CONF_NAME],
-                CONF_SSL: user_input[CONF_SSL],
-                CONF_VERIFY_SSL: user_input[CONF_VERIFY_SSL],
-                CONF_DEVICE: user_input.get(CONF_DEVICE),
-                CONF_MIN_DISTANCE: user_input[CONF_MIN_DISTANCE],
-                CONF_HEARTBEAT_INTERVAL: user_input[CONF_HEARTBEAT_INTERVAL],
-                CONF_API_KEY: new_api_key,
-            }
+                # Build new config from user input
+                self._config = {
+                    CONF_HOST: f"{user_input[CONF_HOST]}:{user_input[CONF_PORT]}",
+                    CONF_NAME: user_input[CONF_NAME],
+                    CONF_SSL: user_input[CONF_SSL],
+                    CONF_VERIFY_SSL: user_input[CONF_VERIFY_SSL],
+                    CONF_DEVICE: user_input.get(CONF_DEVICE),
+                    CONF_MIN_DISTANCE: user_input[CONF_MIN_DISTANCE],
+                    CONF_HEARTBEAT_INTERVAL: user_input[CONF_HEARTBEAT_INTERVAL],
+                    CONF_API_KEY: new_api_key,
+                }
 
-            # Test the connection with new settings
-            if not (errors := await self._async_test_connect()):
-                return self.async_update_reload_and_abort(
-                    self._reconfigure_entry,
-                    data=self._config,
-                    title=self._config[CONF_NAME],
-                )
+                # Test the connection with new settings
+                if not (errors := await self._async_test_connect()):
+                    return self.async_update_reload_and_abort(
+                        self._reconfigure_entry,
+                        data=self._config,
+                        title=self._config[CONF_NAME],
+                    )
         else:
             # Set default values for the form
             user_input = {

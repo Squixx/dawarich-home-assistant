@@ -56,7 +56,8 @@
     },
     "error": {
       "connection_error": "Anslutningsfel, kunde inte nå Dawarich API.",
-      "invalid_api_key": "Ogiltig API-nyckel."
+      "invalid_api_key": "Ogiltig API-nyckel.",
+      "heartbeat_too_short": "Heartbeat-intervallet måste vara 0 (inaktiverat) eller minst 5 minuter."
     },
     "abort": {
       "already_configured": "Denna Dawarich-instans är redan konfigurerad.",

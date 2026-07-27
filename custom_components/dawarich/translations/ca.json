@@ -29,7 +29,8 @@
     },
     "error": {
       "connection_error": "Error de connexió, no s'ha pogut contactar amb l'API de Dawarich.",
-      "invalid_api_key": "Clau d'API invàlida."
+      "invalid_api_key": "Clau d'API invàlida.",
+      "heartbeat_too_short": "L'interval de batec ha de ser 0 (desactivat) o com a mínim 5 minuts."
     }
   },
   "entity": {

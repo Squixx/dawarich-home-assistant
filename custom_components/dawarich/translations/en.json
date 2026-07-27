@@ -55,7 +55,8 @@
     },
     "error": {
       "connection_error": "Connection error, could not reach the Dawarich API.",
-      "invalid_api_key": "Invalid API key."
+      "invalid_api_key": "Invalid API key.",
+      "heartbeat_too_short": "The heartbeat interval must be 0 (disabled) or at least 5 minutes."
     },
     "abort": {
       "already_configured": "This Dawarich instance is already configured.",

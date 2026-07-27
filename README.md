@@ -73,7 +73,7 @@ Below are the configuration options for the Dawarich Home Assistant integration.
 - **Name:** integration entry category to contain devices
 - **Device Tracker:** device tracker to send data to Dawarich
 - **Minimum distance between points:** only send a point once the device has moved at least this far (meters) since the last one. Defaults to `100`, matching Dawarich's own `visit_radius_meters`. Set to `0` to send every update.
-- **Heartbeat interval:** also send the current position every this many minutes, regardless of whether anything changed. Defaults to `15`. Set to `0` to disable.
+- **Heartbeat interval:** also send the current position every this many minutes, regardless of whether anything changed. Defaults to `15`. Set to `0` to disable. Any other value below `5` is rejected, so a typo cannot turn the heartbeat into a firehose.
 - **Use SSL:** check to use HTTPS (i.e. prepends url with `https`)
 - **Verify SSL:** make sure secure connection is made through SSL
 
