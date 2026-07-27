@@ -18,15 +18,32 @@ from homeassistant.helpers import selector
 
 from .const import (
     CONF_DEVICE,
+    CONF_HEARTBEAT_INTERVAL,
+    CONF_MIN_DISTANCE,
+    DEFAULT_HEARTBEAT_INTERVAL,
+    DEFAULT_MIN_DISTANCE,
     DEFAULT_NAME,
     DEFAULT_PORT,
     DEFAULT_SSL,
     DEFAULT_VERIFY_SSL,
     DOMAIN,
+    MAX_DISTANCE_METERS,
+    MAX_HEARTBEAT_MINUTES,
+    MIN_HEARTBEAT_MINUTES,
 )
 from .helpers import get_api
 
 _LOGGER = logging.getLogger(__name__)
+
+# 0 disables the filter entirely, otherwise it is bounded to keep a typo from
+# producing either a useless tracker or one point per minute per tracker.
+MIN_DISTANCE_SELECTOR = vol.All(
+    vol.Coerce(int), vol.Range(min=0, max=MAX_DISTANCE_METERS)
+)
+HEARTBEAT_SELECTOR = vol.All(
+    vol.Coerce(int),
+    vol.Any(0, vol.Range(min=MIN_HEARTBEAT_MINUTES, max=MAX_HEARTBEAT_MINUTES)),
+)
 
 
 class DawarichConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -52,6 +69,8 @@ class DawarichConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_SSL: user_input[CONF_SSL],
                 CONF_VERIFY_SSL: user_input[CONF_VERIFY_SSL],
                 CONF_DEVICE: user_input.get(CONF_DEVICE),
+                CONF_MIN_DISTANCE: user_input[CONF_MIN_DISTANCE],
+                CONF_HEARTBEAT_INTERVAL: user_input[CONF_HEARTBEAT_INTERVAL],
             }
 
             self._async_abort_entries_match(
@@ -88,6 +107,16 @@ class DawarichConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             domain=["device_tracker", "person"]
                         )
                     ),
+                    vol.Required(
+                        CONF_MIN_DISTANCE,
+                        default=user_input.get(CONF_MIN_DISTANCE, DEFAULT_MIN_DISTANCE),
+                    ): MIN_DISTANCE_SELECTOR,
+                    vol.Required(
+                        CONF_HEARTBEAT_INTERVAL,
+                        default=user_input.get(
+                            CONF_HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL
+                        ),
+                    ): HEARTBEAT_SELECTOR,
                     vol.Required(
                         CONF_SSL, default=user_input.get(CONF_SSL, DEFAULT_SSL)
                     ): bool,
@@ -215,6 +244,8 @@ class DawarichConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_SSL: user_input[CONF_SSL],
                 CONF_VERIFY_SSL: user_input[CONF_VERIFY_SSL],
                 CONF_DEVICE: user_input.get(CONF_DEVICE),
+                CONF_MIN_DISTANCE: user_input[CONF_MIN_DISTANCE],
+                CONF_HEARTBEAT_INTERVAL: user_input[CONF_HEARTBEAT_INTERVAL],
                 CONF_API_KEY: new_api_key,
             }
 
@@ -233,6 +264,12 @@ class DawarichConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_NAME: current_data.get(CONF_NAME, DEFAULT_NAME),
                 CONF_SSL: current_data.get(CONF_SSL, DEFAULT_SSL),
                 CONF_VERIFY_SSL: current_data.get(CONF_VERIFY_SSL, DEFAULT_VERIFY_SSL),
+                CONF_MIN_DISTANCE: current_data.get(
+                    CONF_MIN_DISTANCE, DEFAULT_MIN_DISTANCE
+                ),
+                CONF_HEARTBEAT_INTERVAL: current_data.get(
+                    CONF_HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL
+                ),
             }
 
         return self.async_show_form(
@@ -259,6 +296,14 @@ class DawarichConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             domain=["device_tracker", "person"],
                         )
                     ),
+                    vol.Required(
+                        CONF_MIN_DISTANCE,
+                        default=user_input.get(CONF_MIN_DISTANCE),
+                    ): MIN_DISTANCE_SELECTOR,
+                    vol.Required(
+                        CONF_HEARTBEAT_INTERVAL,
+                        default=user_input.get(CONF_HEARTBEAT_INTERVAL),
+                    ): HEARTBEAT_SELECTOR,
                     vol.Required(
                         CONF_SSL,
                         default=user_input.get(CONF_SSL),

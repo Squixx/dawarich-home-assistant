@@ -10,7 +10,13 @@
           "name": "Name",
           "mobile_app": "Device Tracker",
           "ssl": "Use SSL (i.e. https)",
-          "verify_ssl": "Verify SSL"
+          "verify_ssl": "Verify SSL",
+          "min_distance": "Minimum distance between points (meters)",
+          "heartbeat_interval": "Heartbeat interval (minutes)"
+        },
+        "data_description": {
+          "min_distance": "Only send a point once the device has moved at least this far since the last one. 0 sends every update.",
+          "heartbeat_interval": "Also send the current position every this many minutes, so a stationary device never goes silent. 0 disables."
         }
       },
       "api_key": {
@@ -37,7 +43,13 @@
           "mobile_app": "Device Tracker",
           "ssl": "Use SSL (i.e. https)",
           "verify_ssl": "Verify SSL",
-          "api_key": "API Key (leave empty to keep current)"
+          "api_key": "API Key (leave empty to keep current)",
+          "min_distance": "Minimum distance between points (meters)",
+          "heartbeat_interval": "Heartbeat interval (minutes)"
+        },
+        "data_description": {
+          "min_distance": "Only send a point once the device has moved at least this far since the last one. 0 sends every update.",
+          "heartbeat_interval": "Also send the current position every this many minutes, so a stationary device never goes silent. 0 disables."
         }
       }
     },
