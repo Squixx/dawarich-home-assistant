@@ -10,7 +10,13 @@
           "name": "Name",
           "mobile_app": "Apparaat Tracker",
           "ssl": "Gebruiken SSL (d.w.z https)",
-          "verify_ssl": "Verifiëren SSL"
+          "verify_ssl": "Verifiëren SSL",
+          "min_distance": "Minimale afstand tussen punten (meters)",
+          "heartbeat_interval": "Heartbeat-interval (minuten)"
+        },
+        "data_description": {
+          "min_distance": "Stuur pas een punt zodra het apparaat sinds het vorige punt minstens deze afstand heeft afgelegd. 0 stuurt elke update.",
+          "heartbeat_interval": "Stuur daarnaast elke zoveel minuten de huidige positie, zodat een stilstaand apparaat nooit stilvalt. 0 schakelt dit uit."
         }
       },
       "api_key": {
@@ -37,13 +43,20 @@
           "mobile_app": "Apparaat Tracker",
           "ssl": "Gebruiken SSL (d.w.z https)",
           "verify_ssl": "Verifiëren SSL",
-          "api_key": "API Sleutel (laat leeg om huidige te behouden)"
+          "api_key": "API Sleutel (laat leeg om huidige te behouden)",
+          "min_distance": "Minimale afstand tussen punten (meters)",
+          "heartbeat_interval": "Heartbeat-interval (minuten)"
+        },
+        "data_description": {
+          "min_distance": "Stuur pas een punt zodra het apparaat sinds het vorige punt minstens deze afstand heeft afgelegd. 0 stuurt elke update.",
+          "heartbeat_interval": "Stuur daarnaast elke zoveel minuten de huidige positie, zodat een stilstaand apparaat nooit stilvalt. 0 schakelt dit uit."
         }
       }
     },
     "error": {
       "connection_error": "Verbindingsfout, kon de Dawarich API niet bereiken.",
-      "invalid_api_key": "Ongeldige API sleutel."
+      "invalid_api_key": "Ongeldige API sleutel.",
+      "heartbeat_too_short": "Het heartbeat-interval moet 0 (uitgeschakeld) of minstens 5 minuten zijn."
     },
     "abort": {
       "already_configured": "Deze Dawarich instantie is al geconfigureerd.",

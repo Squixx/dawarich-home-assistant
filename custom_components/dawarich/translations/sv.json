@@ -11,7 +11,13 @@
           "name": "Namn",
           "mobile_app": "Enhetspårare",
           "ssl": "Använd SSL (d.v.s. https)",
-          "verify_ssl": "Verifiera SSL"
+          "verify_ssl": "Verifiera SSL",
+          "min_distance": "Minsta avstånd mellan punkter (meter)",
+          "heartbeat_interval": "Heartbeat-intervall (minuter)"
+        },
+        "data_description": {
+          "min_distance": "Skicka en punkt först när enheten har flyttat sig minst så här långt sedan föregående punkt. 0 skickar varje uppdatering.",
+          "heartbeat_interval": "Skicka dessutom den aktuella positionen var så här många minuter, så att en stillastående enhet aldrig blir tyst. 0 inaktiverar."
         }
       },
       "api_key": {
@@ -38,13 +44,20 @@
           "mobile_app": "Enhetspårare",
           "ssl": "Använd SSL (d.v.s. https)",
           "verify_ssl": "Verifiera SSL",
-          "api_key": "API-nyckel (lämna tomt för att behålla nuvarande)"
+          "api_key": "API-nyckel (lämna tomt för att behålla nuvarande)",
+          "min_distance": "Minsta avstånd mellan punkter (meter)",
+          "heartbeat_interval": "Heartbeat-intervall (minuter)"
+        },
+        "data_description": {
+          "min_distance": "Skicka en punkt först när enheten har flyttat sig minst så här långt sedan föregående punkt. 0 skickar varje uppdatering.",
+          "heartbeat_interval": "Skicka dessutom den aktuella positionen var så här många minuter, så att en stillastående enhet aldrig blir tyst. 0 inaktiverar."
         }
       }
     },
     "error": {
       "connection_error": "Anslutningsfel, kunde inte nå Dawarich API.",
-      "invalid_api_key": "Ogiltig API-nyckel."
+      "invalid_api_key": "Ogiltig API-nyckel.",
+      "heartbeat_too_short": "Heartbeat-intervallet måste vara 0 (inaktiverat) eller minst 5 minuter."
     },
     "abort": {
       "already_configured": "Denna Dawarich-instans är redan konfigurerad.",

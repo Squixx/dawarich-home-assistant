@@ -10,7 +10,13 @@
           "name": "Name",
           "mobile_app": "Device Tracker",
           "ssl": "Use SSL (i.e. https)",
-          "verify_ssl": "Verify SSL"
+          "verify_ssl": "Verify SSL",
+          "min_distance": "Minimum distance between points (meters)",
+          "heartbeat_interval": "Heartbeat interval (minutes)"
+        },
+        "data_description": {
+          "min_distance": "Only send a point once the device has moved at least this far since the last one. 0 sends every update.",
+          "heartbeat_interval": "Also send the current position every this many minutes, so a stationary device never goes silent. 0 disables."
         }
       },
       "api_key": {
@@ -37,13 +43,20 @@
           "mobile_app": "Device Tracker",
           "ssl": "Use SSL (i.e. https)",
           "verify_ssl": "Verify SSL",
-          "api_key": "API Key (leave empty to keep current)"
+          "api_key": "API Key (leave empty to keep current)",
+          "min_distance": "Minimum distance between points (meters)",
+          "heartbeat_interval": "Heartbeat interval (minutes)"
+        },
+        "data_description": {
+          "min_distance": "Only send a point once the device has moved at least this far since the last one. 0 sends every update.",
+          "heartbeat_interval": "Also send the current position every this many minutes, so a stationary device never goes silent. 0 disables."
         }
       }
     },
     "error": {
       "connection_error": "[%key:common::config_flow::error::cannot_connect%]",
-      "invalid_api_key": "[%key:common::config_flow::error::invalid_auth%]"
+      "invalid_api_key": "[%key:common::config_flow::error::invalid_auth%]",
+      "heartbeat_too_short": "The heartbeat interval must be 0 (disabled) or at least 5 minutes."
     },
     "abort": {
       "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",

@@ -10,7 +10,13 @@
           "name": "Name",
           "mobile_app": "Geräte Tracker",
           "ssl": "SSL gebrauchen (z.B. https)",
-          "verify_ssl": "SSL verifizieren"
+          "verify_ssl": "SSL verifizieren",
+          "min_distance": "Mindestabstand zwischen Punkten (Meter)",
+          "heartbeat_interval": "Heartbeat-Intervall (Minuten)"
+        },
+        "data_description": {
+          "min_distance": "Sendet einen Punkt erst, wenn sich das Gerät seit dem letzten Punkt mindestens so weit bewegt hat. 0 sendet jede Aktualisierung.",
+          "heartbeat_interval": "Sendet die aktuelle Position zusätzlich alle so viele Minuten, damit ein stehendes Gerät nie verstummt. 0 deaktiviert dies."
         }
       },
       "api_key": {
@@ -37,13 +43,20 @@
           "mobile_app": "Geräte Tracker",
           "ssl": "SSL gebrauchen (z.B. https)",
           "verify_ssl": "SSL verifizieren",
-          "api_key": "API Schlüssel (leer lassen um aktuellen zu behalten)"
+          "api_key": "API Schlüssel (leer lassen um aktuellen zu behalten)",
+          "min_distance": "Mindestabstand zwischen Punkten (Meter)",
+          "heartbeat_interval": "Heartbeat-Intervall (Minuten)"
+        },
+        "data_description": {
+          "min_distance": "Sendet einen Punkt erst, wenn sich das Gerät seit dem letzten Punkt mindestens so weit bewegt hat. 0 sendet jede Aktualisierung.",
+          "heartbeat_interval": "Sendet die aktuelle Position zusätzlich alle so viele Minuten, damit ein stehendes Gerät nie verstummt. 0 deaktiviert dies."
         }
       }
     },
     "error": {
       "connection_error": "Verbindungsfehler, konnte Dawarich API nicht erreichen.",
-      "invalid_api_key": "Ungültiger API Schlüssel."
+      "invalid_api_key": "Ungültiger API Schlüssel.",
+      "heartbeat_too_short": "Das Heartbeat-Intervall muss 0 (deaktiviert) oder mindestens 5 Minuten betragen."
     },
     "abort": {
       "already_configured": "Diese Dawarich Instanz ist bereits konfiguriert.",

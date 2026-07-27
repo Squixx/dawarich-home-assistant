@@ -72,8 +72,31 @@ Below are the configuration options for the Dawarich Home Assistant integration.
 - **Port:** port number for host
 - **Name:** integration entry category to contain devices
 - **Device Tracker:** device tracker to send data to Dawarich
+- **Minimum distance between points:** only send a point once the device has moved at least this far (meters) since the last one. Defaults to `100`, matching Dawarich's own `visit_radius_meters`. Set to `0` to send every update.
+- **Heartbeat interval:** also send the current position every this many minutes, regardless of whether anything changed. Defaults to `15`. Set to `0` to disable. Any other value below `5` is rejected, so a typo cannot turn the heartbeat into a firehose.
 - **Use SSL:** check to use HTTPS (i.e. prepends url with `https`)
 - **Verify SSL:** make sure secure connection is made through SSL
+
+### Why there is both a distance filter and a heartbeat
+
+Home Assistant device trackers are event driven, not periodic. They emit a state
+change on zone transitions and on movement, but also on any other attribute
+change: battery level, wifi SSID, a new accuracy reading. That gives you two
+opposite problems at the same time.
+
+While you are standing still you get far too many points, all at essentially the
+same coordinates. The **minimum distance** filter drops those.
+
+While you stay somewhere for a long time you may get nothing at all for hours.
+Dawarich reads that silence as a departure and a return, and splits one
+continuous stay into several visits. The **heartbeat** prevents that.
+
+> [!IMPORTANT]
+> These two settings are meant to be used together. A distance filter *without* a
+> heartbeat is worse than neither, because filtering out the redundant points
+> also removes the attribute-only updates that were accidentally keeping the
+> stream alive. If you set a minimum distance and disable the heartbeat, the
+> integration will log a warning.
 
 ## Known Issues
 Below are some known issues that are being looked at, but with workarounds for the moment.
